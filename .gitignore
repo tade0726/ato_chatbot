@@ -1,0 +1,14 @@
+# zenml
+.zen/
+
+# __pycache__
+__pycache__/
+
+# .env
+.env
+
+# notebook
+notebooks/
+
+# data
+data/

@@ -1,0 +1,22 @@
+[project]
+name = "ato-chatbot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "jupyter>=1.1.1",
+    "pandas>=2.2.3",
+    "numpy>=2.1.2",
+    "firecrawl-py>=1.4.0",
+    "pymongo>=4.10.1",
+    "llama-index>=0.10.45.post1",
+    "llama-index-vector-stores-qdrant>=0.2.17",
+    "zenml==0.68.1",
+    "datasets>=3.1.0",
+    "streamlit>=1.40.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

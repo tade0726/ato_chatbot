@@ -1,0 +1,72 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example_password
+      MONGO_INITDB_DATABASE: mydatabase
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - app_network
+    command: ["--auth"]
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example_password
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    networks:
+      - app_network
+    depends_on:
+      - mongodb
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    networks:
+      - app_network
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT_LOG_LEVEL: INFO
+
+  zenml:
+    image: zenmldocker/zenml-server
+    container_name: zenml
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - app_network
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+  qdrant_data:
+
+networks:
+  app_network:
+    driver: bridge
