@@ -19,6 +19,7 @@ OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 QDRANT_COLLECTION_NAME = st.secrets["QDRANT_COLLECTION_NAME"]
 QDRANT_API_KEY = st.secrets["QDRANT_API_KEY"]
 LLM_MODEL = st.secrets["LLM_MODEL"]
+TOP_K = 7
 
 # %%
 
@@ -124,7 +125,7 @@ def rephrase_query_function(client: OpenAI, query: str) -> str:
 
 def retrieve_relevant_nodes(query: str, index: VectorStoreIndex) -> list:
     """Retrieve relevant nodes from the index based on the query."""
-    retriever = index.as_retriever(similarity_top_k=3)
+    retriever = index.as_retriever(similarity_top_k=TOP_K)
     nodes = retriever.retrieve(query)
     return nodes
 
