@@ -1,22 +1,21 @@
 # %%
-import os
-import streamlit as st
-from openai import OpenAI
-from llama_index.llms.openai import OpenAI as LlamaIndexOpenAI
-
-from qdrant_client import QdrantClient
-from llama_index.core import StorageContext, VectorStoreIndex
-from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.core import PromptTemplate, ServiceContext
-
-import logging
 import json
+import logging
+import os
+
+import streamlit as st
+from llama_index.core import (PromptTemplate, ServiceContext, StorageContext,
+                              VectorStoreIndex)
+from llama_index.llms.openai import OpenAI as LlamaIndexOpenAI
+from llama_index.vector_stores.qdrant import QdrantVectorStore
+from openai import OpenAI
+from qdrant_client import QdrantClient
 
 # %%
 
 # config
 QDRANT_URI = "http://127.0.0.1:6333"
-COLLECTION_NAME = "ato-chatbot-simple-index-27"
+COLLECTION_NAME = "ato-chatbot-simple-index-32"
 LLM_MODEL = "gpt-4o"
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 
@@ -115,9 +114,7 @@ def retrieve_relevant_nodes(query: str, index: VectorStoreIndex) -> list:
     return nodes
 
 
-
 if __name__ == "__main__":
-
     # Initialize the language model
     llm = initialize_llama_index_llm(OPENAI_API_KEY)
     client = initialize_llm(OPENAI_API_KEY)
@@ -138,9 +135,9 @@ if __name__ == "__main__":
     - **Consultation:** For personalized tax advice, please reach out to a certified tax professional 👨‍💼👩‍💼
 
     **Example Questions You Can Ask:**
-    - "What are the current tax rates for individuals?"
-    - "How do I claim a tax deduction for work-related expenses?"
-    - "What is the deadline for lodging my tax return?"
+    - "What are the GST requirements for small businesses?"
+    - "How do I calculate capital gains tax on an investment property?"
+    - "What superannuation contributions can I claim as a tax deduction?"
 
     Let's get started with your queries! 🚀
     """
@@ -157,12 +154,11 @@ if __name__ == "__main__":
             st.markdown(message["content"])
 
     if query := st.chat_input("Your message"):
-        
         # 1. Rephrase the query for better search
-        rephrase_query = rephrase_query(query, index)
-        
+        rephrase_query: str = rephrase_query(query, index)
+
         logger.debug(f"Rephrased query: {rephrase_query}")
-        
+
         with st.chat_message("user"):
             st.markdown(query)
 
@@ -171,10 +167,7 @@ if __name__ == "__main__":
 
         # 3. Generate final response
         context = [
-            {
-                "source": node.metadata['source'],
-                "content": node.text
-            }
+            {"source": node.metadata["source"], "content": node.text}
             for node in relevant_nodes
         ]
 
@@ -184,27 +177,31 @@ if __name__ == "__main__":
         prompt_template = initialize_prompt()
 
         # Format the prompt with context and rephrase_query
-        formatted_prompt = prompt_template.format(context_str=json.dumps(context, indent=2), query_str=rephrase_query)
+        formatted_prompt = prompt_template.format(
+            context_str=json.dumps(context, indent=2), query_str=rephrase_query
+        )
 
         logger.debug(f"Formatted prompt: {formatted_prompt}")
-        
-        
+
         with st.chat_message("assistant"):
+            with st.spinner("Generating response..."):
+                st.session_state.messages.append(
+                    {"role": "user", "content": rephrase_query}
+                )
 
-            st.session_state.messages.append({"role": "user", "content": query})
-
-            stream = client.chat.completions.create(
-                model=st.session_state["openai_model"],
-                messages=[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
-                ] + [{"role": "assistant", "content": formatted_prompt}],
-                stream=True,
-            )
+                stream = client.chat.completions.create(
+                    model=st.session_state["openai_model"],
+                    messages=[
+                        {"role": m["role"], "content": m["content"]}
+                        for m in st.session_state.messages
+                    ]
+                    + [{"role": "user", "content": formatted_prompt}],
+                    stream=True,
+                )
 
             response = st.write_stream(stream)
 
         st.session_state.messages.append({"role": "assistant", "content": response})
-        
+
 
 # %%
