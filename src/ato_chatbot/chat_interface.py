@@ -97,14 +97,15 @@ def initialize_prompt() -> PromptTemplate:
     return PromptTemplate(CUSTOM_PROMPT_TEMPLATE)
 
 
-def rephrase_query(query: str, index: VectorStoreIndex) -> str:
+def rephrase_query_function(query: str, index: VectorStoreIndex) -> str:
     """Rephrase the user query to be more specific and search-friendly."""
     rephrase_prompt = """Rephrase the following question to be more specific and searchable, 
     focusing on key taxation terms and concepts: {query}"""
 
     query_engine = index.as_query_engine()
     rephrased = query_engine.query(rephrase_prompt.format(query=query))
-    return str(rephrased)
+
+    return f"User query: {query}\nRephrased query: {rephrased}"
 
 
 def retrieve_relevant_nodes(query: str, index: VectorStoreIndex) -> list:
@@ -155,7 +156,8 @@ if __name__ == "__main__":
 
     if query := st.chat_input("Your message"):
         # 1. Rephrase the query for better search
-        rephrase_query: str = rephrase_query(query, index)
+
+        rephrase_query: str = rephrase_query_function(query, index)
 
         logger.debug(f"Rephrased query: {rephrase_query}")
 

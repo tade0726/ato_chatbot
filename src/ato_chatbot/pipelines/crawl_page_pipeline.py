@@ -1,28 +1,24 @@
 # %% libs
 
 
+# logging
+import logging
 # env
 import os
-
 # time
 import time
 
 # pandas
 import pandas as pd
-
 # fire
 from firecrawl import FirecrawlApp
 from typing_extensions import Annotated
-
 ## zenml stuff
 from zenml import Model, get_step_context, log_step_metadata, pipeline, step
 from zenml.logger import get_logger
 
 # datasets
 from ato_chatbot.datasets import MongoDataset
-
-# logging
-import logging
 
 logger = get_logger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -55,7 +51,6 @@ CRAWL_ID = {
 
 @step
 def submit_crawl_request(target_url: str, num_pages: int, crawl_id: str = None) -> dict:
-
     if crawl_id is not None:
         return {
             "id": crawl_id,
@@ -81,7 +76,6 @@ def submit_crawl_request(target_url: str, num_pages: int, crawl_id: str = None) 
 def save_crawl_results(
     crawl_status: dict, mongod_config: dict
 ) -> Annotated[MongoDataset, "scraped_pages"]:
-
     # checking the status of the crawl
     crawl_id = crawl_status["id"]
 
@@ -122,9 +116,7 @@ def save_crawl_results(
 
 
 def requrest_full_data(url: str):
-
     try:
-
         headers = {"Authorization": f"Bearer {os.environ['FIRECRAWL_API_KEY']}"}
         response = requests.request("GET", url, headers=headers)
 
@@ -168,7 +160,6 @@ def crawl_page_pipeline(
     num_pages: int,
     crawl_id: dict,
 ):
-
     # get the crawl id
     crawl_id = crawl_id.get("id", None) if crawl_id else None
 
@@ -182,7 +173,6 @@ def crawl_page_pipeline(
 # %%
 
 if __name__ == "__main__":
-
     dataset = crawl_page_pipeline.with_options(model=model)(
         MONGOD_CONFIG, TARGET_URL, NUM_PAGES, CRAWL_ID
     )

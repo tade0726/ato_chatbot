@@ -1,10 +1,10 @@
 # %%
 # libs
 import os
+from typing import Union
 
 import numpy as np
 import pandas as pd
-
 ## llama index stuff
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.extractors import TitleExtractor
@@ -15,8 +15,6 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from typing_extensions import Annotated
-from typing import Union
-
 ## zenml stuff
 from zenml import Model, get_step_context, log_step_metadata, pipeline, step
 from zenml.logger import get_logger
@@ -255,7 +253,6 @@ def chatbot_simple_index_pipeline(
     num_workers: int,
     use_json: bool = True,
 ):
-
     if use_json:
         dataset = load_data(DATA_PATH)
     else:
