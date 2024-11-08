@@ -1,24 +1,23 @@
 # %%
-import os
-import streamlit as st
-from openai import OpenAI
-from llama_index.llms.openai import OpenAI as LlamaIndexOpenAI
-
-from qdrant_client import QdrantClient
-from llama_index.core import StorageContext, VectorStoreIndex
-from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.core import PromptTemplate, ServiceContext
-
-import logging
 import json
+import logging
+import os
+
+import streamlit as st
+from llama_index.core import (PromptTemplate, ServiceContext, StorageContext,
+                              VectorStoreIndex)
+from llama_index.llms.openai import OpenAI as LlamaIndexOpenAI
+from llama_index.vector_stores.qdrant import QdrantVectorStore
+from openai import OpenAI
+from qdrant_client import QdrantClient
 
 # %%
 
 # config
-QDRANT_URI = "http://127.0.0.1:6333"
-COLLECTION_NAME = "ato-chatbot-simple-index-27"
-LLM_MODEL = "gpt-4o"
+QDRANT_URI = os.environ["QDRANT_URI"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+COLLECTION_NAME = os.environ["QDRANT_COLLECTION_NAME"]
+LLM_MODEL = os.environ["LLM_MODEL"]
 
 # %%
 
@@ -31,33 +30,41 @@ logger.setLevel(logging.DEBUG)
 # %%
 # prompt template
 
-CUSTOM_PROMPT_TEMPLATE = """
-You are an expert assistant specializing in Australian Taxation Office (ATO) matters. Use the provided context to answer the user's question. If the context lacks the necessary information, state this clearly.
+SYSTEM_PROMPT = """
+You are an expert assistant specializing in Australian Taxation Office (ATO) matters. Your primary role is to provide accurate, factual information by carefully analyzing and synthesizing the provided context.
 
-**Context (JSON):** {context_str}
-
-**User Question:** {query_str}
+Instructions for Response:
+1. Analyze all provided context thoroughly before answering
+2. Only use information explicitly present in the context
+3. Cite specific sections or sources when making statements
+4. If information is partial or unclear, acknowledge the limitations
 
 ---
+**Response Structure:**
 
-**Response:**
-
-[Provide a clear and concise answer to the user's question.]
+[Provide a clear, context-based answer that directly addresses the user's question]
 
 **Key Information:**
+- **Verified Facts:** [List key facts from the context with source references]
+- **Requirements:** [List specific requirements mentioned in the context]
+- **Important Dates/Deadlines:** [List relevant dates from the context]
 
-- **Main Points:** [Summarize key points.]
-- **Requirements:** [List any requirements.]
-- **Important Dates:** [List relevant dates.]
-
-**Related Resources:**
-
-- [Topic]: [Source URL]
-- [Topic]: [Source URL]
+**Source References:**
+[List relevant source URLs from the context, with brief descriptions of what information was drawn from each]
 
 ---
+**Confidence Level:**
+- High: All information directly supported by context
+- Partial: Some aspects need additional verification
+- Limited: Insufficient context to fully answer
 
-*Note: If the context does not contain the required information, please indicate this clearly. All information is sourced from official ATO documentation.*
+*Note: This response is based solely on official ATO documentation. For complex situations, please consult a tax professional.*
+"""
+
+
+USER_PROMPT_TEMPLATE = """
+**User Question:** {query_str}
+**Context (JSON):** {context_str}
 """
 
 # %%
@@ -95,17 +102,24 @@ def initialize_index(
 @st.cache_resource
 def initialize_prompt() -> PromptTemplate:
     """Initialize the custom prompt template."""
-    return PromptTemplate(CUSTOM_PROMPT_TEMPLATE)
+    return PromptTemplate(USER_PROMPT_TEMPLATE)
 
 
-def rephrase_query(query: str, index: VectorStoreIndex) -> str:
-    """Rephrase the user query to be more specific and search-friendly."""
-    rephrase_prompt = """Rephrase the following question to be more specific and searchable, 
-    focusing on key taxation terms and concepts: {query}"""
+def rephrase_query_function(client: OpenAI, query: str) -> str:
+    """Rephrase the user query to be more accurate and searchable."""
 
-    query_engine = index.as_query_engine()
-    rephrased = query_engine.query(rephrase_prompt.format(query=query))
-    return str(rephrased)
+    rephrase_prompt = """Rephrase the following question to be more accurate and searchable, 
+    focusing on key taxation terms and concepts"""
+
+    rephrased = client.chat.completions.create(
+        model=LLM_MODEL,
+        messages=[
+            {"role": "system", "content": rephrase_prompt},
+            {"role": "user", "content": query},
+        ],
+    )
+
+    return rephrased.choices[0].message.content
 
 
 def retrieve_relevant_nodes(query: str, index: VectorStoreIndex) -> list:
@@ -115,9 +129,7 @@ def retrieve_relevant_nodes(query: str, index: VectorStoreIndex) -> list:
     return nodes
 
 
-
 if __name__ == "__main__":
-
     # Initialize the language model
     llm = initialize_llama_index_llm(OPENAI_API_KEY)
     client = initialize_llm(OPENAI_API_KEY)
@@ -138,9 +150,9 @@ if __name__ == "__main__":
     - **Consultation:** For personalized tax advice, please reach out to a certified tax professional 👨‍💼👩‍💼
 
     **Example Questions You Can Ask:**
-    - "What are the current tax rates for individuals?"
-    - "How do I claim a tax deduction for work-related expenses?"
-    - "What is the deadline for lodging my tax return?"
+    - "What are the GST requirements for small businesses?"
+    - "How do I calculate capital gains tax on an investment property?"
+    - "What superannuation contributions can I claim as a tax deduction?"
 
     Let's get started with your queries! 🚀
     """
@@ -157,12 +169,12 @@ if __name__ == "__main__":
             st.markdown(message["content"])
 
     if query := st.chat_input("Your message"):
-        
         # 1. Rephrase the query for better search
-        rephrase_query = rephrase_query(query, index)
-        
+
+        rephrase_query: str = rephrase_query_function(client, query)
+
         logger.debug(f"Rephrased query: {rephrase_query}")
-        
+
         with st.chat_message("user"):
             st.markdown(query)
 
@@ -171,10 +183,7 @@ if __name__ == "__main__":
 
         # 3. Generate final response
         context = [
-            {
-                "source": node.metadata['source'],
-                "content": node.text
-            }
+            {"source": node.metadata["source"], "content": node.text}
             for node in relevant_nodes
         ]
 
@@ -184,27 +193,32 @@ if __name__ == "__main__":
         prompt_template = initialize_prompt()
 
         # Format the prompt with context and rephrase_query
-        formatted_prompt = prompt_template.format(context_str=json.dumps(context, indent=2), query_str=rephrase_query)
+        formatted_prompt = prompt_template.format(
+            context_str=json.dumps(context, indent=2), query_str=rephrase_query
+        )
 
         logger.debug(f"Formatted prompt: {formatted_prompt}")
-        
-        
+
         with st.chat_message("assistant"):
+            with st.spinner("Generating response..."):
+                st.session_state.messages.append(
+                    {"role": "user", "content": rephrase_query}
+                )
 
-            st.session_state.messages.append({"role": "user", "content": query})
-
-            stream = client.chat.completions.create(
-                model=st.session_state["openai_model"],
-                messages=[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
-                ] + [{"role": "assistant", "content": formatted_prompt}],
-                stream=True,
-            )
+                stream = client.chat.completions.create(
+                    model=st.session_state["openai_model"],
+                    messages=[{"role": "system", "content": SYSTEM_PROMPT}]
+                    + [
+                        {"role": m["role"], "content": m["content"]}
+                        for m in st.session_state.messages
+                    ]
+                    + [{"role": "user", "content": formatted_prompt}],
+                    stream=True,
+                )
 
             response = st.write_stream(stream)
 
         st.session_state.messages.append({"role": "assistant", "content": response})
-        
+
 
 # %%

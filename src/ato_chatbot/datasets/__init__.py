@@ -29,7 +29,7 @@ class MongoDataset(Dataset):
             collection = db[self.mongod_config["MONGO_COLLECTION"]]
 
             # extract the data from mongodb, turn into a pandas dataframe
-            results = self.collection.find()
+            results = collection.find()
 
             # turn into a pandas dataframe
             self.df = pd.DataFrame(results)
@@ -41,6 +41,11 @@ class MongoDataset(Dataset):
             db = client[self.mongod_config["MONGO_DB"]]
             collection = db[self.mongod_config["MONGO_COLLECTION"]]
 
+            # remove the collection if it exists
+            if self.mongod_config["MONGO_COLLECTION"] in db.list_collection_names():
+                db.drop_collection(self.mongod_config["MONGO_COLLECTION"])
+
+            # write the data to mongodb
             operations = [
                 pymongo.UpdateOne(
                     {"og:url": row["og:url"]},

@@ -1,13 +1,10 @@
 # %%
 # libs
 import os
+from typing import Union
 
 import numpy as np
 import pandas as pd
-
-## internal
-from ato_chatbot.datasets import LocalDataset, MongoDataset
-
 ## llama index stuff
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.extractors import TitleExtractor
@@ -18,10 +15,12 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from typing_extensions import Annotated
-
 ## zenml stuff
 from zenml import Model, get_step_context, log_step_metadata, pipeline, step
 from zenml.logger import get_logger
+
+## internal
+from ato_chatbot.datasets import LocalDataset, MongoDataset
 
 ## change pandas display options
 pd.set_option("display.max_columns", 100)
@@ -36,9 +35,18 @@ logger = get_logger(__name__)
 # PARAMETERS
 
 ## mongodb parameters, reading it from env variables
-MONGO_URI = os.getenv("MONGO_URI")
-MONGO_DB = os.getenv("MONGO_DB")
-MONGO_COLLECTION = os.getenv("MONGO_COLLECTION")
+
+MONGO_RAW_CONFIG = {
+    "MONGO_URI": os.getenv("MONGO_URI"),
+    "MONGO_DB": os.getenv("MONGO_DB_RAW"),
+    "MONGO_COLLECTION": "v1.1",
+}
+
+MONGO_CLEANED_CONFIG = {
+    "MONGO_URI": os.getenv("MONGO_URI"),
+    "MONGO_DB": os.getenv("MONGO_DB"),
+    "MONGO_COLLECTION": os.getenv("MONGO_COLLECTION"),
+}
 
 ## find the repo root
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
@@ -47,7 +55,6 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__fi
 DATA_PATH = os.path.join(REPO_ROOT, "data/documents.json")
 
 ## zenml setup
-zenml_server_url = "http://127.0.0.1:8080"  # INSERT URL TO SERVER HERE in the form "https://URL_TO_SERVER"
 MODEL_NAME = "ato-chatbot-simple-index"
 MODEL_VERSION = None
 
@@ -71,8 +78,15 @@ def load_data(data_path: str) -> Annotated[LocalDataset, "raw_dataset"]:
 
 
 @step(enable_cache=False)
+def load_mongo_data(mongod_config: dict) -> Annotated[MongoDataset, "raw_dataset"]:
+    mongo_dataset = MongoDataset(mongod_config)
+    mongo_dataset.read_data()
+    return mongo_dataset
+
+
+@step(enable_cache=False)
 def clean_and_upload_data(
-    dataset: LocalDataset, mongod_config: dict
+    dataset: Union[LocalDataset, MongoDataset], mongod_config: dict
 ) -> Annotated[MongoDataset, "cleaned_dataset"]:
     cols_keep = [
         "markdown",
@@ -185,9 +199,9 @@ def build_index(
             metadata={
                 "source": row["og:url"],
                 "title": row["title"],
-                "description": row["description"],
-                "keywords": row["keywords"],
-                "themes": row["themes"],
+                # "description": row["description"],
+                # "keywords": row["keywords"],
+                # "themes": row["themes"],
             },
         )
         for _, row in df.iterrows()
@@ -231,25 +245,22 @@ model = Model(
 @pipeline
 def chatbot_simple_index_pipeline(
     data_path: str,
-    mongo_uri: str,
-    mongo_db: str,
-    mongo_collection: str,
     qdrant_uri: str,
     chunk_size: int,
     chunk_overlap: int,
     num_docs: int,
     using_qdrant: bool,
     num_workers: int,
+    use_json: bool = True,
 ):
-    dataset = load_data(data_path)
+    if use_json:
+        dataset = load_data(DATA_PATH)
+    else:
+        dataset = load_mongo_data(MONGO_RAW_CONFIG)
 
     mongo_dataset = clean_and_upload_data(
         dataset,
-        {
-            "MONGO_URI": mongo_uri,
-            "MONGO_DB": mongo_db,
-            "MONGO_COLLECTION": mongo_collection,
-        },
+        MONGO_CLEANED_CONFIG,
     )
 
     build_index(
@@ -272,13 +283,11 @@ if __name__ == "__main__":
         model=model,
     )(
         data_path=DATA_PATH,
-        mongo_uri=MONGO_URI,
-        mongo_db=MONGO_DB,
-        mongo_collection=MONGO_COLLECTION,
         qdrant_uri=QDRANT_URI,
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
         num_docs=NUM_DOCS,
         using_qdrant=True,
         num_workers=NUM_WORKERS,
+        use_json=False,
     )
