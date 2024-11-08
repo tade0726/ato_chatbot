@@ -1,6 +1,15 @@
 # ATO Chatbot
 
-A RAG-based chatbot system for Australian Taxation Office (ATO) information retrieval and assistance.
+A RAG-based chatbot system for Australian Taxation Office (ATO) information retrieval and assistance, powered by data sourced from ato.gov.au.
+
+
+## Live Demo
+https://ato-chat.streamlit.app/
+
+
+![Chat Interface Screenshot](./docs/chat_interface.png)
+*Figure 1: Streamlit Chat Interface with example conversation*
+
 
 ## Overview
 
@@ -44,7 +53,7 @@ The data pipeline is built using ZenML and consists of several key steps:
 3. **Index Creation**: Creates embeddings and stores them in Qdrant
 
 ![Data Pipeline Flow](./docs/pipeline_flow.png)
-*Figure 1: ZenML Pipeline Workflow showing data processing steps*
+*Figure 2: ZenML Pipeline Workflow showing data processing steps*
 
 Key pipeline components:
 
@@ -61,8 +70,6 @@ The chat interface is built with Streamlit and implements a 3-step RAG process:
 2. **Knowledge Retrieval**: Fetches relevant information from Qdrant
 3. **Response Generation**: Uses OpenAI to generate contextual responses
 
-![Chat Interface Screenshot](./docs/chat_interface.png)
-*Figure 2: Streamlit Chat Interface with example conversation*
 
 Key interface components:
 
@@ -109,10 +116,6 @@ make zen_run_simple_index
 make streamlit
 ```
 
-
-## Live Demo
-
-[Coming Soon] A live demo of the chatbot will be available here.
 
 ## Dependencies
 

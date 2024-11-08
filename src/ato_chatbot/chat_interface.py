@@ -148,11 +148,23 @@ if __name__ == "__main__":
     - **Source:** All data is derived from official ATO documentation 📚
     - **Purpose:** This tool is designed for general informational purposes and should not replace professional tax advice ⚠️
     - **Consultation:** For personalized tax advice, please reach out to a certified tax professional 👨‍💼👩‍💼
+    - **Disclaimer:** This is a demonstration project showcasing RAG (Retrieval-Augmented Generation) capabilities. The ATO website has not been fully scraped, so responses may not be comprehensive.
 
     **Example Questions You Can Ask:**
     - "What are the GST requirements for small businesses?"
     - "How do I calculate capital gains tax on an investment property?"
     - "What superannuation contributions can I claim as a tax deduction?"
+
+    **About the Author:**
+    - **Developer:** Ted Zhao
+    - **LinkedIn:** [Ted Zhao](https://www.linkedin.com/in/ted-zhao/)
+    - **Email:** ted.zhao.au@gmail.com
+    - **Resume:** [GitHub Resume](https://github.com/tade0726/tedzhao-resume)
+
+    💼 *Currently open to new opportunities! Feel free to contact me to discuss:*
+    - RAG applications and implementations
+    - Professional opportunities
+    - AI/ML collaborations
 
     Let's get started with your queries! 🚀
     """
