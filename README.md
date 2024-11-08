@@ -50,8 +50,6 @@ Key pipeline components:
 
 ```
 python:src/ato_chatbot/pipelines/simple_index_pipeline.py
-startLine: 231
-endLine: 264
 ```
 
 
@@ -70,15 +68,13 @@ Key interface components:
 
 ```
 python:src/ato_chatbot/chat_interface.py
-startLine: 101
-endLine: 116
 ```
 
 ## Setup
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.12+g
 - Docker and Docker Compose
 - OpenAI API key
 
@@ -93,7 +89,7 @@ uv install
 
 3. Start required services:
 
-```
+```bash
 make up
 ```
 
@@ -102,14 +98,14 @@ make up
 
 1. Train the model:
 
-```
+```bash
 make zen_run_simple_index
 ```
 
 
 2. Start the chat interface:
 
-```
+```bash
 make streamlit
 ```
 
@@ -124,8 +120,6 @@ Key dependencies include:
 
 ```
 toml:pyproject.toml
-startLine: 7
-endLine: 18
 ```
 
 
