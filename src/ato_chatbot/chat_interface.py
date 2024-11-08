@@ -14,10 +14,10 @@ from qdrant_client import QdrantClient
 # %%
 
 # config
-QDRANT_URI = "http://127.0.0.1:6333"
-COLLECTION_NAME = "ato-chatbot-simple-index-32"
-LLM_MODEL = "gpt-4o"
+QDRANT_URI = os.environ["QDRANT_URI"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+COLLECTION_NAME = os.environ["QDRANT_COLLECTION_NAME"]
+LLM_MODEL = os.environ["LLM_MODEL"]
 
 # %%
 
