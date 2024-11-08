@@ -26,7 +26,6 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot system sp
   - [sentence-transformers](https://www.sbert.net/) - Text embeddings generation
 
 - **Backend & Infrastructure**
-  - [FastAPI](https://fastapi.tiangolo.com/) - API framework
   - [Docker](https://www.docker.com/) - Containerization
   - [MongoDB](https://www.mongodb.com/) - Document storage
 
