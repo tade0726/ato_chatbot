@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+<!-- Data Pipeline -->
+<g transform="translate(50,50)">
+    <rect x="0" y="0" width="300" height="300" fill="#f0f0f0" stroke="#333"/>
+    <text x="150" y="30" text-anchor="middle" font-weight="bold">Data Pipeline</text>
+    
+    <!-- Crawl Box -->
+    <rect x="20" y="50" width="80" height="70" fill="#fff" stroke="#333"/>
+    <text x="60" y="70" text-anchor="middle" font-size="12">
+        <tspan x="60" dy="0">Crawl ATO</tspan>
+        <tspan x="60" dy="14">Pages</tspan>
+        <tspan x="60" dy="14" font-size="10" fill="#666">(Firecrawl)</tspan>
+    </text>
+    
+    <!-- Clean Box -->
+    <rect x="110" y="50" width="80" height="70" fill="#fff" stroke="#333"/>
+    <text x="150" y="70" text-anchor="middle" font-size="12">
+        <tspan x="150" dy="0">Clean</tspan>
+        <tspan x="150" dy="14">Data</tspan>
+        <tspan x="150" dy="14" font-size="10" fill="#666">(Pandas)</tspan>
+    </text>
+    
+    <!-- Index Box -->
+    <rect x="200" y="50" width="80" height="70" fill="#fff" stroke="#333"/>
+    <text x="240" y="70" text-anchor="middle" font-size="12">
+        <tspan x="240" dy="0">Index</tspan>
+        <tspan x="240" dy="14">Creation</tspan>
+        <tspan x="240" dy="14" font-size="10" fill="#666">(LlamaIndex)</tspan>
+    </text>
+    
+    <!-- Storage -->
+    <rect x="20" y="140" width="260" height="70" fill="#e6f3ff" stroke="#333"/>
+    <text x="150" y="175" text-anchor="middle" font-size="12">
+        <tspan x="150" dy="0">Vector Store</tspan>
+        <tspan x="150" dy="14" font-size="10" fill="#666">(Qdrant)</tspan>
+    </text>
+
+    <!-- Pipeline Management -->
+    <rect x="20" y="230" width="260" height="50" fill="#f5f5f5" stroke="#333"/>
+    <text x="150" y="260" text-anchor="middle" font-size="12">
+        <tspan x="150" dy="0">ZenML Pipeline Management</tspan>
+    </text>
+</g>
+
+<!-- Connection Arrow - Now starts after ZenML box -->
+<path d="M180,330 L180,350" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<text x="200" y="340" font-size="10" fill="#666">Vector Index</text>
+<defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+</defs>
+
+<!-- Chat Interface -->
+<g transform="translate(50,350)">
+    <rect x="0" y="0" width="300" height="200" fill="#f0f0f0" stroke="#333"/>
+    <text x="150" y="30" text-anchor="middle" font-weight="bold">Chat Interface</text>
+    
+    <!-- Query Box -->
+    <rect x="20" y="50" width="80" height="70" fill="#fff" stroke="#333"/>
+    <text x="60" y="70" text-anchor="middle" font-size="12">
+        <tspan x="60" dy="0">Query</tspan>
+        <tspan x="60" dy="14">Rephrase</tspan>
+        <tspan x="60" dy="14" font-size="10" fill="#666">(LlamaIndex)</tspan>
+    </text>
+    
+    <!-- Retrieval Box -->
+    <rect x="110" y="50" width="80" height="70" fill="#fff" stroke="#333"/>
+    <text x="150" y="70" text-anchor="middle" font-size="12">
+        <tspan x="150" dy="0">Retrieval</tspan>
+        <tspan x="150" dy="14">Engine</tspan>
+        <tspan x="150" dy="14" font-size="10" fill="#666">(Qdrant)</tspan>
+    </text>
+    
+    <!-- Response Box -->
+    <rect x="200" y="50" width="80" height="70" fill="#fff" stroke="#333"/>
+    <text x="240" y="70" text-anchor="middle" font-size="12">
+        <tspan x="240" dy="0">Response</tspan>
+        <tspan x="240" dy="14">Generation</tspan>
+        <tspan x="240" dy="14" font-size="10" fill="#666">(OpenAI)</tspan>
+    </text>
+    
+    <!-- Interface -->
+    <rect x="20" y="140" width="260" height="40" fill="#e6f3ff" stroke="#333"/>
+    <text x="150" y="165" text-anchor="middle" font-size="12">
+        <tspan x="150" dy="0">Streamlit Interface</tspan>
+    </text>
+</g>
+</svg>
