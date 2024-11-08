@@ -4,7 +4,7 @@ import logging
 import os
 
 import streamlit as st
-from llama_index.core import (PromptTemplate, ServiceContext, StorageContext,
+from llama_index.core import (PromptTemplate, Settings, StorageContext,
                               VectorStoreIndex)
 from llama_index.llms.openai import OpenAI as LlamaIndexOpenAI
 from llama_index.vector_stores.qdrant import QdrantVectorStore
@@ -14,10 +14,11 @@ from qdrant_client import QdrantClient
 # %%
 
 # config
-QDRANT_URI = os.environ["QDRANT_URI"]
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
-COLLECTION_NAME = os.environ["QDRANT_COLLECTION_NAME"]
-LLM_MODEL = os.environ["LLM_MODEL"]
+QDRANT_URI = st.secrets["QDRANT_URI"]
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+QDRANT_COLLECTION_NAME = st.secrets["QDRANT_COLLECTION_NAME"]
+QDRANT_API_KEY = st.secrets["QDRANT_API_KEY"]
+LLM_MODEL = st.secrets["LLM_MODEL"]
 
 # %%
 
@@ -85,18 +86,17 @@ def initialize_llama_index_llm(api_key: str) -> LlamaIndexOpenAI:
 
 
 @st.cache_resource
-def initialize_index(
-    qdrant_uri: str, collection_name: str, _llm: OpenAI
-) -> VectorStoreIndex:
+def initialize_index(_llm: OpenAI) -> VectorStoreIndex:
     """Create a VectorStoreIndex from the documents."""
 
-    service_context = ServiceContext.from_defaults(llm=_llm)
-    client = QdrantClient(url=qdrant_uri)
-    vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
-
-    return VectorStoreIndex.from_vector_store(
-        vector_store, service_context=service_context
+    # Update Settings instead of ServiceContext
+    Settings.llm = _llm
+    client = QdrantClient(url=QDRANT_URI, api_key=QDRANT_API_KEY)
+    vector_store = QdrantVectorStore(
+        client=client, collection_name=QDRANT_COLLECTION_NAME
     )
+
+    return VectorStoreIndex.from_vector_store(vector_store)
 
 
 @st.cache_resource
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     client = initialize_llm(OPENAI_API_KEY)
 
     # Create the index
-    index = initialize_index(QDRANT_URI, COLLECTION_NAME, llm)
+    index = initialize_index(llm)
 
     # Add introduction/header
     st.title("Welcome to the ATO Tax Information Assistant 🧾")

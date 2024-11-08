@@ -12,3 +12,6 @@ notebooks/
 
 # data
 data/
+
+# streamlit
+.streamlit/
