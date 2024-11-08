@@ -32,7 +32,6 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot system sp
 - **Machine Learning & AI**
   - [OpenAI](https://openai.com/) - Large Language Model API
   - [LlamaIndex](https://www.llamaindex.ai/) - RAG framework and indexing
-  - [sentence-transformers](https://www.sbert.net/) - Text embeddings generation
 
 - **Backend & Infrastructure**
   - [Docker](https://www.docker.com/) - Containerization
