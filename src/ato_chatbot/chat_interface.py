@@ -87,11 +87,9 @@ def initialize_llama_index_llm(api_key: str) -> LlamaIndexOpenAI:
 
 
 @st.cache_resource
-def initialize_index(_llm: OpenAI) -> VectorStoreIndex:
+def initialize_index() -> VectorStoreIndex:
     """Create a VectorStoreIndex from the documents."""
 
-    # Update Settings instead of ServiceContext
-    Settings.llm = _llm
     client = QdrantClient(url=QDRANT_URI, api_key=QDRANT_API_KEY)
     vector_store = QdrantVectorStore(
         client=client, collection_name=QDRANT_COLLECTION_NAME
@@ -135,8 +133,11 @@ if __name__ == "__main__":
     llm = initialize_llama_index_llm(OPENAI_API_KEY)
     client = initialize_llm(OPENAI_API_KEY)
 
+    # Update Settings instead of ServiceContext
+    Settings.llm = llm
+
     # Create the index
-    index = initialize_index(llm)
+    index = initialize_index()
 
     # Add introduction/header
     st.title("Welcome to the ATO Tax Information Assistant 🧾")

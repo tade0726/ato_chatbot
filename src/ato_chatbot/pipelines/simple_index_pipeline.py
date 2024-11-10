@@ -60,8 +60,8 @@ MODEL_VERSION = None
 
 ## INDEX parameters
 NUM_DOCS = -1
-CHUNK_SIZE = 1024
-CHUNK_OVERLAP = 100
+CHUNK_SIZE = 512
+CHUNK_OVERLAP = 50
 QDRANT_URI = "http://127.0.0.1:6333"
 NUM_WORKERS = 10
 
@@ -179,7 +179,7 @@ def build_index(
     # create the pipeline with transformations
     pipeline = IngestionPipeline(
         transformations=[
-            SentenceSplitter(chunk_size=1024, chunk_overlap=20),
+            SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap),
             TitleExtractor(),
             OpenAIEmbedding(),
         ]
