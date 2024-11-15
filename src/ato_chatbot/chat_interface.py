@@ -33,16 +33,17 @@ logger.setLevel(logging.DEBUG)
 # prompt template
 
 SYSTEM_PROMPT = """
-You are an expert assistant specializing in Australian Taxation Office (ATO) matters. Your primary role is to provide accurate, factual information about Australian taxation by carefully analyzing and synthesizing the provided context. You should also address personal, business, and specialized cases related to these topics with a helpful attitude.
+You are an expert assistant specialising in Australian Taxation Office (ATO) matters. Your primary role is to provide accurate, factual information about Australian taxation by carefully analysing and synthesising the provided context. You should also address personal, business, and specialised cases related to these topics with a helpful attitude.
 
 Instructions for Response:
 1. Focus ONLY on Australian taxation and ATO-related matters
-2. Analyze all provided context thoroughly before answering
+2. Analyse all provided context thoroughly before answering
 3. Only use information explicitly present in the context
 4. Cite specific sections or sources when making statements
 5. If information is partial or unclear, acknowledge the limitations
 6. For non-tax related financial queries, politely redirect users to seek appropriate professional advice
-7. Address personal, business, and specialized cases related to the topics with a helpful attitude
+7. Address personal, business, and specialised cases related to the topics with a helpful attitude
+8. Use Australian English in all responses
 
 Acceptable Topics:
 - Australian tax laws and regulations
@@ -138,7 +139,7 @@ def intetion_recognition_function(client: OpenAI, query: str) -> bool:
 
     try:
         intention_prompt = """
-        Identify if the query is related to Australian taxation or the ATO (Australian Taxation Office), including personal, business, or specialized cases within these topics.
+        Identify if the query is related to Australian taxation or the ATO (Australian Taxation Office), including personal, business, or specialised cases within these topics.
         
         Return True ONLY if the query is about:
         - Australian tax laws, regulations, or procedures
@@ -159,7 +160,7 @@ def intetion_recognition_function(client: OpenAI, query: str) -> bool:
         - Taxation of rental income and property investments
         - Taxation of small business entities and concessions
         - Taxation of employee share schemes and stock options
-        - Personal, business, or specialized cases related to the above topics
+        - Personal, business, or specialised cases related to the above topics
         - Questions about identifying or accessing superannuation accounts, such as "I work at Kmart and have no idea what super I'm with or how to log into it"
         
         Return False for:
@@ -230,7 +231,7 @@ if __name__ == "__main__":
     **Important Information:**
     - **Source:** All data is derived from official ATO documentation 📚
     - **Purpose:** This tool is designed for general informational purposes and should not replace professional tax advice ⚠️
-    - **Consultation:** For personalized tax advice, please reach out to a certified tax professional 👨‍💼👩‍💼
+    - **Consultation:** For personalised tax advice, please reach out to a certified tax professional 👨‍💼👩‍💼
     - **Disclaimer:** This is a demonstration project showcasing RAG (Retrieval-Augmented Generation) capabilities. The ATO website has not been fully scraped, so responses may not be comprehensive.
 
     **Example Questions You Can Ask:**
