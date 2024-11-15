@@ -234,12 +234,18 @@ if __name__ == "__main__":
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
+    if "interaction_count" not in st.session_state:
+        st.session_state.interaction_count = 0
+
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
     if query := st.chat_input("Your message"):
         logger.debug(f"Query: {query}")
+
+        # Increment interaction counter and show feedback reminder
+        st.session_state.interaction_count += 1
 
         # Check query intention
         if not (intention := intetion_recognition_function(client, query)):
@@ -310,6 +316,15 @@ For non-tax related financial advice, please consult a financial advisor. How ca
                 response = st.write_stream(stream)
 
             st.session_state.messages.append({"role": "assistant", "content": response})
+
+        if (
+            st.session_state.interaction_count % 2 == 0
+        ):  # Show reminder every 2 interactions
+            st.info(
+                "📝 Enjoying the chat? Please take a moment to share your feedback! "
+                "[Fill out our quick survey](https://forms.gle/kS5qDPY1dHWAA9MQ9)\n\n"
+                "💡 Leave your email in the survey to stay updated on future developments!"
+            )
 
 
 # %%
