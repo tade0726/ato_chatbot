@@ -145,6 +145,18 @@ def intetion_recognition_function(client: OpenAI, query: str) -> bool:
         - GST, income tax, or other Australian tax types
         - Business tax obligations in Australia
         - Australian financial matters directly related to taxation
+        - Superannuation or super-related queries
+        - Tax implications of investments and capital gains
+        - Taxation of foreign income for Australian residents
+        - Tax offsets and rebates available in Australia
+        - Taxation of trusts, partnerships, and companies in Australia
+        - Fringe benefits tax (FBT) and its applications
+        - Taxation of retirement savings and pension withdrawals
+        - Tax compliance and audit processes by the ATO
+        - Taxation of digital currencies and crypto assets
+        - Taxation of rental income and property investments
+        - Taxation of small business entities and concessions
+        - Taxation of employee share schemes and stock options
         
         Return False for:
         - Non-tax related questions
@@ -152,6 +164,7 @@ def intetion_recognition_function(client: OpenAI, query: str) -> bool:
         - Questions about non-Australian tax systems
         - Personal or off-topic queries
         - General financial advice not related to taxation
+        - Queries about non-tax related superannuation investments
         
         Return response in rawJSON format: 
         
@@ -260,18 +273,19 @@ if __name__ == "__main__":
                 st.markdown(query)
 
             with st.chat_message("assistant"):
-                message = """I apologize, but I can only answer questions related to Australian taxation and ATO matters. 
+                message = """I apologize, but I can only answer questions related to Australian taxation, ATO matters, and superannuation. 
 
 Please rephrase your question to focus on:
-- Australian tax laws and regulations
+- Australian tax laws, regulations, and procedures
 - ATO services and requirements
-- Tax deductions and returns
-- GST and income tax
+- Tax deductions, returns, and obligations
+- GST, income tax, and other Australian tax types
 - Business tax obligations in Australia
-- Taxation aspects of superannuation
-- Tax-related financial matters
+- Superannuation contributions, withdrawals, and related tax implications
+- Taxation aspects of retirement planning and savings
+- Tax-related financial matters specific to Australia
 
-For non-tax related financial advice, please consult a financial advisor. How can I help you with your Australian tax-related query?"""
+For non-tax related financial advice, please consult a financial advisor. How can I help you with your Australian tax-related or superannuation query?"""
                 st.warning(message)
         else:
             # 1. Rephrase the query for better search
