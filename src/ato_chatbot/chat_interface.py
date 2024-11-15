@@ -33,36 +33,46 @@ logger.setLevel(logging.DEBUG)
 # prompt template
 
 SYSTEM_PROMPT = """
-You are an expert assistant specializing in Australian Taxation Office (ATO) matters. Your primary role is to provide accurate, factual information by carefully analyzing and synthesizing the provided context.
+You are an expert assistant specializing in Australian Taxation Office (ATO) matters. Your primary role is to provide accurate, factual information about Australian taxation by carefully analyzing and synthesizing the provided context.
 
 Instructions for Response:
-1. Analyze all provided context thoroughly before answering
-2. Only use information explicitly present in the context
-3. Cite specific sections or sources when making statements
-4. If information is partial or unclear, acknowledge the limitations
+1. Focus ONLY on Australian taxation and ATO-related matters
+2. Analyze all provided context thoroughly before answering
+3. Only use information explicitly present in the context
+4. Cite specific sections or sources when making statements
+5. If information is partial or unclear, acknowledge the limitations
+6. For non-tax related financial queries, politely redirect users to seek appropriate professional advice
+
+Acceptable Topics:
+- Australian tax laws and regulations
+- ATO services and requirements
+- Tax deductions and returns
+- GST and income tax matters
+- Business tax obligations in Australia
+- Taxation aspects of superannuation
+- Tax-related financial reporting requirements
 
 ---
 **Response Structure:**
 
-[Provide a clear, context-based answer that directly addresses the user's question]
+[Provide a clear, context-based answer that directly addresses the user's tax-related question]
 
 **Key Information:**
-- **Verified Facts:** [List key facts from the context with source references]
-- **Requirements:** [List specific requirements mentioned in the context]
-- **Important Dates/Deadlines:** [List relevant dates from the context]
+- **Verified Facts:** [List key tax-related facts from the context with source references]
+- **Requirements:** [List specific tax requirements mentioned in the context]
+- **Important Dates/Deadlines:** [List relevant tax dates from the context]
 
 **Source References:**
-[List relevant source URLs from the context, with brief descriptions of what information was drawn from each]
+[List relevant ATO source URLs from the context, with brief descriptions of what information was drawn from each]
 
 ---
 **Confidence Level:**
-- High: All information directly supported by context
+- High: All tax-related information directly supported by context
 - Partial: Some aspects need additional verification
 - Limited: Insufficient context to fully answer
 
-*Note: This response is based solely on official ATO documentation. For complex situations, please consult a tax professional.*
+*Note: This response is based solely on official ATO documentation. For complex taxation matters or non-tax financial advice, please consult appropriate professionals.*
 """
-
 
 USER_PROMPT_TEMPLATE = """
 **User Question:** {query_str}
@@ -119,6 +129,52 @@ def rephrase_query_function(client: OpenAI, query: str) -> str:
     )
 
     return rephrased.choices[0].message.content
+
+
+def intetion_recognition_function(client: OpenAI, query: str) -> bool:
+    """Recognize the user's intention based on the query."""
+
+    try:
+        intention_prompt = """
+        Identify if the query is related to Australian taxation or the ATO (Australian Taxation Office).
+        
+        Return True ONLY if the query is about:
+        - Australian tax laws, regulations, or procedures
+        - ATO services or requirements
+        - Tax deductions, returns, or obligations
+        - GST, income tax, or other Australian tax types
+        - Business tax obligations in Australia
+        - Australian financial matters directly related to taxation
+        
+        Return False for:
+        - Non-tax related questions
+        - General chat or greetings
+        - Questions about non-Australian tax systems
+        - Personal or off-topic queries
+        - General financial advice not related to taxation
+        
+        Return response in JSON format: {"intention": true/false}
+        """
+
+        intention = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[
+                {"role": "system", "content": intention_prompt},
+                {"role": "user", "content": query},
+            ],
+        )
+        response_text = intention.choices[0].message.content
+        logger.debug(f"Intention recognition response: {response_text}")
+
+        intention: dict = json.loads(response_text)
+        logger.debug(f"Parsed intention response: {intention}")
+
+        return intention["intention"]
+    except Exception as e:
+        logger.error(
+            f"Error recognizing intention: {e}, api returned: {intention.choices[0].message.content}"
+        )
+        return False
 
 
 def retrieve_relevant_nodes(query: str, index: VectorStoreIndex) -> list:
@@ -183,56 +239,81 @@ if __name__ == "__main__":
             st.markdown(message["content"])
 
     if query := st.chat_input("Your message"):
-        # 1. Rephrase the query for better search
+        logger.debug(f"Query: {query}")
 
-        rephrase_query: str = rephrase_query_function(client, query)
+        # Check query intention
+        if not (intention := intetion_recognition_function(client, query)):
+            with st.chat_message("user"):
+                st.markdown(query)
 
-        logger.debug(f"Rephrased query: {rephrase_query}")
+            with st.chat_message("assistant"):
+                message = """I apologize, but I can only answer questions related to Australian taxation and ATO matters. 
 
-        with st.chat_message("user"):
-            st.markdown(query)
+Please rephrase your question to focus on:
+- Australian tax laws and regulations
+- ATO services and requirements
+- Tax deductions and returns
+- GST and income tax
+- Business tax obligations in Australia
+- Taxation aspects of superannuation
+- Tax-related financial matters
 
-        # 2. Retrieve relevant nodes
-        relevant_nodes = retrieve_relevant_nodes(rephrase_query, index)
+For non-tax related financial advice, please consult a financial advisor. How can I help you with your Australian tax-related query?"""
+                st.warning(message)
 
-        # 3. Generate final response
-        context = [
-            {"source": node.metadata["source"], "content": node.text}
-            for node in relevant_nodes
-        ]
+            # Add the exchange to session state
+            st.session_state.messages.append({"role": "user", "content": query})
+            st.session_state.messages.append({"role": "assistant", "content": message})
+        else:
+            # 1. Rephrase the query for better search
+            rephrase_query: str = rephrase_query_function(client, query)
 
-        logger.debug(f"Context: {context}")
+            logger.debug(f"Rephrased query: {rephrase_query}")
 
-        # Get the prompt template
-        prompt_template = initialize_prompt()
+            with st.chat_message("user"):
+                st.markdown(query)
 
-        # Format the prompt with context and rephrase_query
-        formatted_prompt = prompt_template.format(
-            context_str=json.dumps(context, indent=2), query_str=rephrase_query
-        )
+            # 2. Retrieve relevant nodes
+            relevant_nodes = retrieve_relevant_nodes(rephrase_query, index)
 
-        logger.debug(f"Formatted prompt: {formatted_prompt}")
+            # 3. Generate final response
+            context = [
+                {"source": node.metadata["source"], "content": node.text}
+                for node in relevant_nodes
+            ]
 
-        with st.chat_message("assistant"):
-            with st.spinner("Generating response..."):
-                st.session_state.messages.append(
-                    {"role": "user", "content": rephrase_query}
-                )
+            logger.debug(f"Context: {context}")
 
-                stream = client.chat.completions.create(
-                    model=st.session_state["openai_model"],
-                    messages=[{"role": "system", "content": SYSTEM_PROMPT}]
-                    + [
-                        {"role": m["role"], "content": m["content"]}
-                        for m in st.session_state.messages
-                    ]
-                    + [{"role": "user", "content": formatted_prompt}],
-                    stream=True,
-                )
+            # Get the prompt template
+            prompt_template = initialize_prompt()
 
-            response = st.write_stream(stream)
+            # Format the prompt with context and rephrase_query
+            formatted_prompt = prompt_template.format(
+                context_str=json.dumps(context, indent=2), query_str=rephrase_query
+            )
 
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            logger.debug(f"Formatted prompt: {formatted_prompt}")
+
+            with st.chat_message("assistant"):
+                with st.spinner("Generating response..."):
+                    st.session_state.messages.append(
+                        {"role": "user", "content": rephrase_query}
+                    )
+
+                    stream = client.chat.completions.create(
+                        model=st.session_state["openai_model"],
+                        messages=[{"role": "system", "content": SYSTEM_PROMPT}]
+                        + [
+                            {"role": m["role"], "content": m["content"]}
+                            for m in st.session_state.messages
+                        ]
+                        + [{"role": "user", "content": formatted_prompt}],
+                        stream=True,
+                    )
+
+                response = st.write_stream(stream)
+
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
 
 # %%
