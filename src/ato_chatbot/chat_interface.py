@@ -153,7 +153,9 @@ def intetion_recognition_function(client: OpenAI, query: str) -> bool:
         - Personal or off-topic queries
         - General financial advice not related to taxation
         
-        Return response in JSON format: {"intention": true/false}
+        Return response in rawJSON format: 
+        
+        {"intention": true/false}
         """
 
         intention = client.chat.completions.create(
@@ -166,6 +168,11 @@ def intetion_recognition_function(client: OpenAI, query: str) -> bool:
         response_text = intention.choices[0].message.content
         logger.debug(f"Intention recognition response: {response_text}")
 
+        # clean the response text, if ```json``` is present, remove it
+        if response_text.startswith("```json"):
+            response_text = response_text.lstrip("```json").rstrip("```")
+
+        # Parse the response text as JSON
         intention: dict = json.loads(response_text)
         logger.debug(f"Parsed intention response: {intention}")
 
