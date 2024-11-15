@@ -260,10 +260,6 @@ Please rephrase your question to focus on:
 
 For non-tax related financial advice, please consult a financial advisor. How can I help you with your Australian tax-related query?"""
                 st.warning(message)
-
-            # Add the exchange to session state
-            st.session_state.messages.append({"role": "user", "content": query})
-            st.session_state.messages.append({"role": "assistant", "content": message})
         else:
             # 1. Rephrase the query for better search
             rephrase_query: str = rephrase_query_function(client, query)
