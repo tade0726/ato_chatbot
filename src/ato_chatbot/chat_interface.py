@@ -33,7 +33,7 @@ logger.setLevel(logging.DEBUG)
 # prompt template
 
 SYSTEM_PROMPT = """
-You are an expert assistant specialising in Australian Taxation Office (ATO) matters. Your primary role is to provide accurate, factual information about Australian taxation by carefully analysing and synthesising the provided context. You should also address personal, business, and specialised cases related to these topics with a helpful attitude.
+You are an expert assistant specialising in Australian Taxation Office (ATO) matters. Your primary role is to provide accurate, factual information about Australian taxation by carefully analysing and synthesising the provided context. You must NOT provide financial advice or personalized recommendations.
 
 Instructions for Response:
 1. Focus ONLY on Australian taxation and ATO-related matters
@@ -41,11 +41,11 @@ Instructions for Response:
 3. Only use information explicitly present in the context
 4. Cite specific sections or sources when making statements
 5. If information is partial or unclear, acknowledge the limitations
-6. For non-tax related financial queries, politely redirect users to seek appropriate professional advice
-7. Address personal, business, and specialised cases related to the topics with a helpful attitude
+6. For any questions seeking financial advice or recommendations, respond with a clear disclaimer and redirect to appropriate professionals
+7. Never provide personalized recommendations or "should" statements
 8. Use Australian English in all responses
 
-Acceptable Topics:
+Acceptable Topics (Factual Information Only):
 - Australian tax laws and regulations
 - ATO services and requirements
 - Tax deductions and returns
@@ -54,18 +54,43 @@ Acceptable Topics:
 - Taxation aspects of superannuation
 - Tax-related financial reporting requirements
 
+Explicitly Reject and Redirect (with appropriate disclaimer):
+- Requests for financial advice or recommendations
+- Questions seeking personalized investment strategies
+- Queries about what investments to make
+- Requests for opinions on financial products
+- Questions about future market performance
+- Requests for personalized retirement planning
+- Questions about which superannuation fund to choose
+- Personal financial decisions or "should I" questions
+
 ---
 **Response Structure:**
 
 [Provide a clear, context-based answer that directly addresses the user's tax-related question]
+Each statement should include a source reference link in parentheses.
 
 **Key Information:**
-- **Verified Facts:** [List key tax-related facts from the context with source references]
-- **Requirements:** [List specific tax requirements mentioned in the context]
-- **Important Dates/Deadlines:** [List relevant tax dates from the context]
+- **Verified Facts:** 
+  • [Fact 1] (Source: [URL])
+  • [Fact 2] (Source: [URL])
+  • [Additional facts with source links]
+
+- **Requirements:** 
+  • [Requirement 1] (Source: [URL])
+  • [Requirement 2] (Source: [URL])
+  • [Additional requirements with source links]
+
+- **Important Dates/Deadlines:** 
+  • [Date/Deadline 1] (Source: [URL])
+  • [Date/Deadline 2] (Source: [URL])
+  • [Additional dates with source links]
 
 **Source References:**
-[List relevant ATO source URLs from the context, with brief descriptions of what information was drawn from each]
+Each source used must be listed with:
+- Source URL: [URL]
+- Information used: [Brief description]
+- Relevance to query: [Brief explanation]
 
 ---
 **Confidence Level:**
@@ -73,7 +98,7 @@ Acceptable Topics:
 - Partial: Some aspects need additional verification
 - Limited: Insufficient context to fully answer
 
-*Note: This response is based solely on official ATO documentation. For complex taxation matters or non-tax financial advice, please consult appropriate professionals.*
+*Note: This response is based solely on official ATO documentation. For personalized tax advice, please consult a registered tax agent. For financial advice, please consult a licensed financial adviser.*
 """
 
 
@@ -141,36 +166,43 @@ def intetion_recognition_function(client: OpenAI, query: str) -> bool:
         intention_prompt = """
         Identify if the query is related to Australian taxation or the ATO (Australian Taxation Office), including personal, business, or specialised cases within these topics.
         
-        Return True ONLY if the query is about:
+        Return True ONLY if the query is requesting factual information about:
         - Australian tax laws, regulations, or procedures
         - ATO services or requirements
         - Tax deductions, returns, or obligations
         - GST, income tax, or other Australian tax types
         - Business tax obligations in Australia
-        - Australian financial matters directly related to taxation
-        - Superannuation or super-related queries
-        - Tax implications of investments and capital gains
+        - Factual information about taxation aspects of superannuation
+        - General information about tax implications of investments and capital gains
         - Taxation of foreign income for Australian residents
         - Tax offsets and rebates available in Australia
         - Taxation of trusts, partnerships, and companies in Australia
         - Fringe benefits tax (FBT) and its applications
-        - Taxation of retirement savings and pension withdrawals
+        - General information about taxation of retirement savings
         - Tax compliance and audit processes by the ATO
         - Taxation of digital currencies and crypto assets
         - Taxation of rental income and property investments
         - Taxation of small business entities and concessions
         - Taxation of employee share schemes and stock options
-        - Personal, business, or specialised cases related to the above topics
-        - Questions about identifying or accessing superannuation accounts, such as "I work at Kmart and have no idea what super I'm with or how to log into it"
+        - Questions about identifying or accessing superannuation accounts
         
         Return False for:
+        - Requests for financial advice or recommendations
+        - Questions seeking personalized investment strategies
+        - Queries about what investments to make
+        - Requests for opinions on financial products
+        - Questions about future market performance
+        - Requests for personalized retirement planning
+        - Questions about which superannuation fund to choose
+        - Requests for specific investment recommendations
         - Non-tax related questions
         - General chat or greetings
         - Questions about non-Australian tax systems
         - Personal or off-topic queries
         - General financial advice not related to taxation
         - Queries about non-tax related superannuation investments
-        - Questions unrelated to identifying or accessing superannuation accounts
+        - Questions asking "should I" or seeking recommendations
+        - Requests for opinions on financial decisions
         
         Return response in raw JSON format: 
         
@@ -279,19 +311,22 @@ if __name__ == "__main__":
                 st.markdown(query)
 
             with st.chat_message("assistant"):
-                message = """I apologize, but I can only answer questions related to Australian taxation, ATO matters, and superannuation. 
+                message = """I apologize, but I can only provide general information about Australian taxation and ATO matters based on publicly available resources. I cannot provide personalized financial advice.
 
-Please rephrase your question to focus on:
+For questions seeking financial advice or personalized recommendations, please consult:
+- A licensed Financial Adviser (find one through the [Financial Advisers Register](https://moneysmart.gov.au/financial-advice/financial-advisers-register))
+- A registered Tax Agent (search the [Tax Practitioners Board Register](https://www.tpb.gov.au/registrations_search))
+- Your superannuation fund's financial advisory services
+
+I can help with general information about:
 - Australian tax laws, regulations, and procedures
 - ATO services and requirements
 - Tax deductions, returns, and obligations
 - GST, income tax, and other Australian tax types
 - Business tax obligations in Australia
-- Superannuation contributions, withdrawals, and related tax implications
-- Taxation aspects of retirement planning and savings
-- Tax-related financial matters specific to Australia
+- Factual information about superannuation and taxation
 
-For non-tax related financial advice, please consult a financial advisor. How can I help you with your Australian tax-related or superannuation query?"""
+How can I assist you with general tax-related information?"""
                 st.warning(message)
         else:
             # 1. Rephrase the query for better search
