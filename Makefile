@@ -19,6 +19,7 @@ format:
 
 
 streamlit:
+	make format
 	uv run streamlit run src/ato_chatbot/chat_interface.py
 
 freeze:

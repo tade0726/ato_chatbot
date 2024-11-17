@@ -367,7 +367,10 @@ How can I assist you with factual tax-related information?"""
 
             with st.chat_message("assistant"):
                 with st.spinner("Generating response..."):
-                    response = client.chat.completions.create(
+                    st.session_state.messages.append(
+                        {"role": "user", "content": rephrase_query}
+                    )
+                    stream = client.chat.completions.create(
                         model=st.session_state["openai_model"],
                         messages=[{"role": "system", "content": SYSTEM_PROMPT}]
                         + [
@@ -375,12 +378,11 @@ How can I assist you with factual tax-related information?"""
                             for m in st.session_state.messages
                         ]
                         + [{"role": "user", "content": formatted_prompt}],
+                        stream=True,
                     )
-                    st.markdown(response.choices[0].message.content)
 
-            st.session_state.messages.append(
-                {"role": "assistant", "content": response.choices[0].message.content}
-            )
+                response = st.write_stream(stream)
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
         if (
             st.session_state.interaction_count % 2 == 0
