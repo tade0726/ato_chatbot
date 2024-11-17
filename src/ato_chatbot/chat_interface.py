@@ -164,49 +164,48 @@ def intetion_recognition_function(client: OpenAI, query: str) -> bool:
 
     try:
         intention_prompt = """
-        Identify if the query is related to Australian taxation or the ATO (Australian Taxation Office), including personal, business, or specialised cases within these topics.
+        Analyze the query and determine if it requests factual Australian taxation/ATO information. Return a JSON response with a boolean decision and reasoning.
+
+        APPROVE (return true) if query seeks factual information about:
+        1. Australian Tax Laws and Procedures
+           - Tax legislation and regulations
+           - ATO administrative processes
+           - Lodgment requirements
+           - Tax rates and thresholds
         
-        Return True ONLY if the query is requesting factual information about:
-        - Australian tax laws, regulations, or procedures
-        - ATO services or requirements
-        - Tax deductions, returns, or obligations
-        - GST, income tax, or other Australian tax types
-        - Business tax obligations in Australia
-        - Factual information about taxation aspects of superannuation
-        - General information about tax implications of investments and capital gains
-        - Taxation of foreign income for Australian residents
-        - Tax offsets and rebates available in Australia
-        - Taxation of trusts, partnerships, and companies in Australia
-        - Fringe benefits tax (FBT) and its applications
-        - General information about taxation of retirement savings
-        - Tax compliance and audit processes by the ATO
-        - Taxation of digital currencies and crypto assets
-        - Taxation of rental income and property investments
-        - Taxation of small business entities and concessions
-        - Taxation of employee share schemes and stock options
-        - Questions about identifying or accessing superannuation accounts
+        2. Tax Documentation and Reporting
+           - Required forms and documentation
+           - Record keeping requirements
+           - Reporting deadlines
+           - Tax file number (TFN) matters
         
-        Return False for:
-        - Requests for financial advice or recommendations
-        - Questions seeking personalized investment strategies
-        - Queries about what investments to make
-        - Requests for opinions on financial products
-        - Questions about future market performance
-        - Requests for personalized retirement planning
-        - Questions about which superannuation fund to choose
-        - Requests for specific investment recommendations
-        - Non-tax related questions
-        - General chat or greetings
-        - Questions about non-Australian tax systems
-        - Personal or off-topic queries
-        - General financial advice not related to taxation
-        - Queries about non-tax related superannuation investments
-        - Questions asking "should I" or seeking recommendations
-        - Requests for opinions on financial decisions
+        3. Specific Tax Categories
+           - Income tax calculations
+           - GST requirements
+           - Capital gains tax facts
+           - Fringe benefits tax
+           - Business tax obligations
+           - Superannuation tax treatment
         
-        Return response in raw JSON format: 
+        REJECT (return false) if query involves:
+        1. Financial Advice
+           - Investment recommendations
+           - Financial planning suggestions
+           - Portfolio management
+           - Risk assessment advice
         
-        {"intention": true/false}
+        2. Out of Scope
+           - Non-Australian tax matters
+           - General financial topics
+           - Personal opinions
+           - Off-topic queries
+           - Market predictions
+        
+        Response Format:
+        {
+            "intention": boolean,
+            "reason": "Specific reason for classification based on above criteria"
+        }
         """
 
         intention = client.chat.completions.create(
@@ -311,22 +310,30 @@ if __name__ == "__main__":
                 st.markdown(query)
 
             with st.chat_message("assistant"):
-                message = """I apologize, but I can only provide general information about Australian taxation and ATO matters based on publicly available resources. I cannot provide personalized financial advice.
+                message = """I apologize, but I can only provide factual information about Australian taxation and ATO matters. I cannot assist with regulated financial services or personal recommendations.
 
-For questions seeking financial advice or personalized recommendations, please consult:
+I can help with:
+- Australian tax laws and ATO procedures
+- Tax returns, deductions, and obligations
+- Tax-related aspects of superannuation
+- Factual tax information for investments and assets
+
+I cannot provide assistance with:
+- Financial product advice
+- Investment recommendations or strategies
+- Market-making or securities trading
+- Fund management or investment schemes
+- Superannuation fund selection
+- Personal financial planning
+- "Should I" questions about financial decisions
+- Non-Australian tax matters
+- General chat or off-topic queries
+
+For regulated financial services, please consult:
 - A licensed Financial Adviser (find one through the [Financial Advisers Register](https://moneysmart.gov.au/financial-advice/financial-advisers-register))
 - A registered Tax Agent (search the [Tax Practitioners Board Register](https://www.tpb.gov.au/registrations_search))
-- Your superannuation fund's financial advisory services
 
-I can help with general information about:
-- Australian tax laws, regulations, and procedures
-- ATO services and requirements
-- Tax deductions, returns, and obligations
-- GST, income tax, and other Australian tax types
-- Business tax obligations in Australia
-- Factual information about superannuation and taxation
-
-How can I assist you with general tax-related information?"""
+How can I assist you with factual tax-related information?"""
                 st.warning(message)
         else:
             # 1. Rephrase the query for better search
@@ -360,11 +367,7 @@ How can I assist you with general tax-related information?"""
 
             with st.chat_message("assistant"):
                 with st.spinner("Generating response..."):
-                    st.session_state.messages.append(
-                        {"role": "user", "content": rephrase_query}
-                    )
-
-                    stream = client.chat.completions.create(
+                    response = client.chat.completions.create(
                         model=st.session_state["openai_model"],
                         messages=[{"role": "system", "content": SYSTEM_PROMPT}]
                         + [
@@ -372,12 +375,12 @@ How can I assist you with general tax-related information?"""
                             for m in st.session_state.messages
                         ]
                         + [{"role": "user", "content": formatted_prompt}],
-                        stream=True,
                     )
+                    st.markdown(response.choices[0].message.content)
 
-                response = st.write_stream(stream)
-
-            st.session_state.messages.append({"role": "assistant", "content": response})
+            st.session_state.messages.append(
+                {"role": "assistant", "content": response.choices[0].message.content}
+            )
 
         if (
             st.session_state.interaction_count % 2 == 0
