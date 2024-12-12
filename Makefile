@@ -8,9 +8,9 @@ down:
 	docker compose down
 
 
-zen_run_simple_index:
+create_index:
 	# zenml connect --url http://127.0.0.1:8080
-	uv run src/ato_chatbot/pipelines/simple_index_pipeline.py
+	uv run src/ato_chatbot/pipelines/index_pipeline.py
 
 
 format:
