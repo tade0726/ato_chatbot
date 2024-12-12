@@ -13,7 +13,7 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import Document
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.qdrant import QdrantVectorStore
-from qdrant_client import QdrantClient
+from qdrant_client import QdrantClient, models
 from typing_extensions import Annotated
 ## zenml stuff
 from zenml import Model, get_step_context, log_step_metadata, pipeline, step
@@ -55,7 +55,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__fi
 DATA_PATH = os.path.join(REPO_ROOT, "data/documents.json")
 
 ## zenml setup
-MODEL_NAME = "ato-chatbot-simple-index"
+MODEL_NAME = "ato-chatbot-index"
 MODEL_VERSION = None
 
 ## INDEX parameters
@@ -173,7 +173,25 @@ def build_index(
 
     # client
     client = QdrantClient(url=qdrant_uri)
-    vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
+
+    # create two sets of vectors fro hybrid search
+
+    client.create_collection(
+        collection_name=collection_name,
+        vectors_config={
+            "text-dense": models.VectorParams(
+                size=1536,  # openai vector size
+                distance=models.Distance.COSINE,
+            )
+        },
+        sparse_vectors_config={
+            "text-sparse": models.SparseVectorParams(modifier=models.Modifier.IDF)
+        },
+    )
+
+    vector_store = QdrantVectorStore(
+        client=client, collection_name=collection_name, enable_hybrid=True
+    )
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
     # create the pipeline with transformations
@@ -196,13 +214,7 @@ def build_index(
     documents = [
         Document(
             text=row["markdown"],
-            metadata={
-                "source": row["og:url"],
-                "title": row["title"],
-                # "description": row["description"],
-                # "keywords": row["keywords"],
-                # "themes": row["themes"],
-            },
+            metadata={"source": row["og:url"], "title": row["title"]},
         )
         for _, row in df.iterrows()
     ]
@@ -237,13 +249,13 @@ def build_index(
 model = Model(
     name=MODEL_NAME,
     version=MODEL_VERSION or None,
-    description="A simple index model for the ATO chatbot",
+    description="A index model for the ATO chatbot",
     tags=["ato", "chatbot", "index"],
 )
 
 
 @pipeline
-def chatbot_simple_index_pipeline(
+def chatbot_index_pipeline(
     data_path: str,
     qdrant_uri: str,
     chunk_size: int,
@@ -279,7 +291,7 @@ def chatbot_simple_index_pipeline(
 
 if __name__ == "__main__":
     # Run the pipeline and configure some parameters at runtime
-    pipeline_run = chatbot_simple_index_pipeline.with_options(
+    pipeline_run = chatbot_index_pipeline.with_options(
         model=model,
     )(
         data_path=DATA_PATH,

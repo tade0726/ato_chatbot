@@ -130,7 +130,7 @@ def initialize_index() -> VectorStoreIndex:
 
     client = QdrantClient(url=QDRANT_URI, api_key=QDRANT_API_KEY)
     vector_store = QdrantVectorStore(
-        client=client, collection_name=QDRANT_COLLECTION_NAME
+        client=client, collection_name=QDRANT_COLLECTION_NAME, enable_hybrid=True
     )
 
     return VectorStoreIndex.from_vector_store(vector_store)

@@ -15,6 +15,7 @@ dependencies = [
     "zenml==0.68.1",
     "datasets>=3.1.0",
     "streamlit>=1.40.0",
+    "transformers[torch]>=4.47.0",
 ]
 
 [build-system]
